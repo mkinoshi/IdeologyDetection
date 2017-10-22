@@ -16,6 +16,8 @@ from gensim import corpora, matutils
 
 # classification model
 from sklearn.cluster import KMeans
+from BiasedWordsNgram import extract_biased_words
+import sys
 
 """
 Pre-processing tools 
@@ -65,7 +67,7 @@ def vectorize_articles(tokenized_docs, dict):
 
 ################ main function ################	
 
-def main(lib_docs, con_docs, lib_test_docs, con_test_docs):
+def main(lib_docs, con_docs, lib_test_docs, con_test_docs, ind):
 	### MODEL CONSTRUCTION ###
 	
 	# tokenize the docs
@@ -83,8 +85,15 @@ def main(lib_docs, con_docs, lib_test_docs, con_test_docs):
 	# concat tokenized_docs lists
 	all_tokenized_docs = lib_tokenized_docs + con_tokenized_docs
 	
-	# use all_tokenized_docs so that matrix's # of features matches
-	dict =  corpora.Dictionary(all_tokenized_docs)
+	# if ind = 0, use tokenzied words to crate dic, if ind = 1 use extracted 100 biased words with length = 2 for each
+	# if ind = 2  use extracted 100 biased words with length = 3 for each
+	if ind == 0:		
+		# use all_tokenized_docs so that matrix's # of features matches
+		dict =  corpora.Dictionary(all_tokenized_docs)
+	elif ind == 1:
+		dict = corpora.Dictionary(BiasedWordsNgram(ind))
+	else:
+		dict = corpora.Dictionary(BiasedWordsNgram(ind))
 	
 	# create matrix for each category
 	lib_docs_matrix = vectorize_articles(lib_tokenized_docs, dict)
@@ -140,70 +149,67 @@ def main(lib_docs, con_docs, lib_test_docs, con_test_docs):
 
 
 if __name__ == '__main__':
-	[lib, con, neutral] = cPickle.load(open('ibcData.pkl', 'rb'))
-	
-# 	print len(lib)
-# 	print len(con)
-# 	exit()
-	
-	lib_docs = []
-	con_docs = []
-	lib_test_docs = []
-	con_test_docs = []
-	
-	# collect the training data 
-	for tree in lib[0:1000]:
-		# pre-process doc. 
-		sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
-		lib_docs.append(sentence)
-	
-	for tree in con[0:1000]:
-		# pre-process doc. 
-		sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
-		con_docs.append(sentence)
-	
-	
-	# collect the testing data
-	for tree in lib[1000:1700]:
-		# pre-process doc. 
-		sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
-		lib_test_docs.append(sentence)
+	if len(sys.argv) < 2:
+		print "You need one more agument"
+		print "0: normal bug of words k means, 1: using  extracted biased words (length = 2) Pearson's chai square to, 2: using  extracted biased words (length = 2) Pearson's chai square to"
+	else:
+		[lib, con, neutral] = cPickle.load(open('ibcData.pkl', 'rb'))
 		
-	for tree in con[1000:1700]:
-		# pre-process doc. 
-		sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
-		con_test_docs.append(sentence)
-	
-	
-	main(lib_docs, con_docs, lib_test_docs, con_test_docs)
-	
-	
-	
-	
-	
-	
-# loop through training data and get a list of all article strings
-# create a dicitonary based on that, and tokenize articles while doing so
-# 
-# want to get vector representation of each training article
-# so, use dict.doc2bow(tokens) to get list of tuples with id and frequency of word in tokens
-# 	e.g. [(0, 1), (4, 1), (7, 1)] 
-# 
-# change this information into a numpy matrix where id is the row number and the 
-# 	frequency is the value in the vector. Each article is a column. 
-# 
-# Now, run k-means clustering with K = 2.
-# Put in one 
-# 	
+		# 	print len(lib)
+		# 	print len(con)
+		# 	exit()
+		
+		lib_docs = []
+		con_docs = []
+		lib_test_docs = []
+		con_test_docs = []
+		
+		# collect the training data 
+		for tree in lib[0:1000]:
+			# pre-process doc. 
+			sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
+			lib_docs.append(sentence)
+		
+		for tree in con[0:1000]:
+			# pre-process doc. 
+			sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
+			con_docs.append(sentence)
+		
+		
+		# collect the testing data
+		for tree in lib[1000:1700]:
+			# pre-process doc. 
+			sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
+			lib_test_docs.append(sentence)
+			
+		for tree in con[1000:1700]:
+			# pre-process doc. 
+			sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
+			con_test_docs.append(sentence)
+		 
+		main(lib_docs, con_docs, lib_test_docs, con_test_docs, sys.argv[1])	
+		# loop through training data and get a list of all article strings
+		# create a dicitonary based on that, and tokenize articles while doing so
+		# 
+		# want to get vector representation of each training article
+		# so, use dict.doc2bow(tokens) to get list of tuples with id and frequency of word in tokens
+		# 	e.g. [(0, 1), (4, 1), (7, 1)] 
+		# 
+		# change this information into a numpy matrix where id is the row number and the 
+		# 	frequency is the value in the vector. Each article is a column. 
+		# 
+		# Now, run k-means clustering with K = 2.
+		# Put in one 
+		# 	
 
 
 
-# take mean of each category, run PCA and reduce number of features to 3, 
-# we end up with two data points in 3-D, each representing the mean of their categories
-# find the middle value??
+		# take mean of each category, run PCA and reduce number of features to 3, 
+		# we end up with two data points in 3-D, each representing the mean of their categories
+		# find the middle value??
 
 
 
-# take out the words that only appear once throughout all documents
-# 
-# 
+		# take out the words that only appear once throughout all documents
+		# 
+		# 
