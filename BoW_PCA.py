@@ -20,6 +20,10 @@ from sklearn.cluster import KMeans
 # PCA function
 from PCA import pca
 
+# plotting library
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 """
 Pre-processing tools 
 """
@@ -77,6 +81,8 @@ def pca_cutoff(eigen_vals, cutoff_perc):
 		if cumulative > cutoff_perc:
 			return row
 
+
+# returns a list of words with high variance in the given eignevector direction
 def find_topn_words(eigen_vector, dict, n=10):
 	ind = np.argpartition(np.absolute(eigen_vector), -n)[-n:]
 	words = []
@@ -84,6 +90,26 @@ def find_topn_words(eigen_vector, dict, n=10):
 		words.append(dict.get(i))
 	return words
 
+# uses matplotlib to visualize projection of data 
+#def plot_over_vecs(x_vec, y_vec, data_matrix):
+
+def two_dim_eigenplot(lib_xy, con_xy):
+	plt.plot(lib_xy[0], lib_xy[1], 'bo', con_xy[0], con_xy[1], 'ro')
+	plt.xlabel('eigenvector 0')
+	plt.ylabel('eigenvector 1')
+	plt.show()
+
+	
+def three_dim_eigenplot(lib_xyz, con_xyz):
+	fig = plt.figure()
+	ax = Axes3D(fig)
+	ax.scatter(lib_xyz[0], lib_xyz[1], lib_xyz[2], c='b', marker='o')
+	ax.scatter(con_xyz[0], con_xyz[1], con_xyz[2], c='r', marker='o')
+	ax.set_xlabel('eigenvector 0')
+	ax.set_ylabel('eigenvector 1')
+	ax.set_zlabel('eigenvector 2')
+
+	plt.show()
 
 ################ main function ################	
 
@@ -117,7 +143,7 @@ def main(lib_docs, con_docs, lib_test_docs, con_test_docs, num_evecs, num_words,
 	
 	(proj_matrix, e_vecs, e_vals)=  pca(all_docs_matrix)
 	
-	print lib_docs_matrix.shape
+       	print lib_docs_matrix.shape
 	print con_docs_matrix.shape
 
 	# project each category matrix onto the transpose of eigenvector matrix	
@@ -195,6 +221,22 @@ def main(lib_docs, con_docs, lib_test_docs, con_test_docs, num_evecs, num_words,
 	# find the top n words for the top m eigenvectors
 	for row in range(num_evecs):
 		print find_topn_words(e_vecs[row,:], dict, num_words)
+
+	
+	# plot along eigenvectors
+	lib_x = lib_proj_test_matrix[:,0]
+	lib_y = lib_proj_test_matrix[:,1]
+	con_x = con_proj_test_matrix[:,0]
+	con_y = con_proj_test_matrix[:,1]
+	lib_z = lib_proj_test_matrix[:,2]
+	con_z = con_proj_test_matrix[:,2]
+	
+	lib_xyz = [lib_x, lib_y, lib_z]
+	con_xyz = [con_x, con_y, lib_z]
+	
+	two_dim_eigenplot(lib_xyz[:2], con_xyz[:2])
+	three_dim_eigenplot(lib_xyz, con_xyz)
+
 
 if __name__ == '__main__':
 	# user input for cutoff and influtential word seach.
