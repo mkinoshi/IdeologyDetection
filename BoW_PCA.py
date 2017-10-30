@@ -98,7 +98,7 @@ def two_dim_eigenplot(lib_xy, con_xy):
 	plt.xlabel('eigenvector 0')
 	plt.ylabel('eigenvector 1')
 	plt.show()
-
+	plt.close()
 	
 def three_dim_eigenplot(lib_xyz, con_xyz):
 	fig = plt.figure()
@@ -110,7 +110,7 @@ def three_dim_eigenplot(lib_xyz, con_xyz):
 	ax.set_zlabel('eigenvector 2')
 
 	plt.show()
-
+	plt.close()
 ################ main function ################	
 
 def main(lib_docs, con_docs, lib_test_docs, con_test_docs, num_evecs, num_words, cutoff=False, cutoff_rate=1.0):
