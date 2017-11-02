@@ -177,7 +177,7 @@ if __name__ == '__main__':
 		
 		
 		# collect the testing data
-		for tree in lib[1000:1700]:
+		for tree in c:
 			# pre-process doc. 
 			sentence = re.sub("[^(a-rt-zA-z\s)]", "", tree.get_words()).replace("`","").replace("(","").replace(")","").replace("	"," ")
 			lib_test_docs.append(sentence)
