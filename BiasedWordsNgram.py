@@ -517,14 +517,14 @@ def extract_biased_words(ind):
     con_ret_100_three = con_ret_three[0: 101]
 
   if ind == 1:
-    print lib_ret_100_one
-    print con_ret_100_one
+    print lib_ret_100_one[0:10]
+    print con_ret_100_one[0:10]
     return lib_ret_100_one + con_ret_100_one
   elif ind == 2:
-    print lib_ret_100_two
-    print con_ret_100_two
+    print lib_ret_100_two[0:10]
+    print con_ret_100_two[0:10]
     return lib_ret_100_two + con_ret_100_two
   else:
-    print lib_ret_100_three
-    print con_ret_100_three
+    print lib_ret_100_three[0:10]
+    print con_ret_100_three[0:10]
     return lib_ret_100_three + con_ret_100_three

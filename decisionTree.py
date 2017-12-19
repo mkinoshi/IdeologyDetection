@@ -1,5 +1,8 @@
 import pandas as pd
 from BiasedWordsNgram import extract_biased_words
+from BoW_PCA import toknize_article
+from BoW_PCA import vectorize_articles
+from gensim import corpora, matutils
 import random
 import math
 import json
@@ -24,9 +27,34 @@ with open('data.json') as data_file:
   lib = data['liberal']
   con = data['conservative']
 
-def create_dataframe():
+def create_dataframe(ind):
   #create word corpse
-  words_corpse = list(set(extract_biased_words(1)))
+  # biased_words = extract_biased_words(1)
+  if ind == 0:
+    words_corpse = list(set(extract_biased_words(2)))
+  elif ind == 1:
+    words_corpse = list(set(add_prefix_features(list(set(extract_biased_words(1))))))
+  elif ind == -1:
+    # tokenize the docs
+    lib_tokenized_docs = []
+    con_tokenized_docs = []
+    
+    for sentence in lib[0:1000]:
+      tokens = toknize_article(sentence)
+      lib_tokenized_docs.append(tokens)
+    
+    for sentence in con[0:1000]:
+      tokens = toknize_article(sentence)
+      con_tokenized_docs.append(tokens)
+    
+    # concat tokenized_docs lists
+    all_tokenized_docs = lib_tokenized_docs + con_tokenized_docs
+    
+    # use all_tokenized_docs so that matrix's # of features matches
+    words_corpse =  corpora.Dictionary(all_tokenized_docs).values()
+    # print dict.values()
+    # create matrix for each category
+  
   columns = ['ideology'] + words_corpse
 
   data_train_lib = []
@@ -80,44 +108,63 @@ def create_dataframe():
 def pick_subset(anchor_words):
   s=set(stopwords.words('english'))
   features = [];
-  for word in anchor_words:
-    word_freq = {}
-    for sent in lib[0: 1000]:
-      sentence = re.sub("[^(a-rt-zA-z\s')]", "", sent).replace("`","").replace("(","").replace(")","").replace("	"," ")
-      sent_list = sentence.split()
-      if word in sent_list and sent_list.index(word) > 0:
-        pref = sent_list[sent_list.index(word)-1];
-        if (pref in word_freq):
-          word_freq[pref] += 1
-        else:
-          word_freq[pref] = 1
-    for sent in con[0: 1000]:
-      sentence = re.sub("[^(a-rt-zA-z\s')]", "", sent).replace("`","").replace("(","").replace(")","").replace("	"," ")
-      sent_list = sentence.split()
-      if word in sent_list and sent_list.index(word) > 0:
-        pref = sent_list[sent_list.index(word)-1];
-        if (pref in word_freq):
-          word_freq[pref] += 1
-        else:
-          word_freq[pref] = 1
-    word_freq_sorted = sorted(word_freq.items(), key=operator.itemgetter(1)).reverse()
-    count = 0
-    print len(word_freq_sorted)
+  word_freq = {}
+  for sent in lib[0: 1000]:
+    sentence = re.sub("[^(a-rt-zA-z\s')]", "", sent).replace("`","").replace("(","").replace(")","").replace("	"," ")
+    sent_list = sentence.split()
+    if anchor_words in sent_list and sent_list.index(anchor_words) > 0:
+      pref = sent_list[sent_list.index(anchor_words)-1];
+      if (pref in word_freq):
+        word_freq[pref] += 1
+      else:
+        word_freq[pref] = 1
+  for sent in con[0: 1000]:
+    sentence = re.sub("[^(a-rt-zA-z\s')]", "", sent).replace("`","").replace("(","").replace(")","").replace("	"," ")
+    sent_list = sentence.split()
+    if anchor_words in sent_list and sent_list.index(anchor_words) > 0:
+      pref = sent_list[sent_list.index(anchor_words)-1];
+      if (pref in word_freq):
+        word_freq[pref] += 1
+      else:
+        word_freq[pref] = 1
+  word_freq_sorted = sorted(word_freq.items(), key=operator.itemgetter(1))
+  count = 0
+  word_freq_sorted.reverse()
+  if len(word_freq_sorted) > 0:
     while word_freq_sorted[count][1] > 3:
       if word_freq_sorted[count][0] not in s:
         features.append(word_freq_sorted[count][0])
       count += 1
+    if len(features) > 0:
+      print "word ", anchor_words, " features "
+    return features
+  else:
+    return []
 
-    print features
+def add_prefix_features(biased_words):
+  #we take top 5 words from liberal biased and top 5 words from conservative
+  features = biased_words
+  count = 0
+  ind = 0
+  featured_words = 0
+  while ind < 100:
+    new_features = pick_subset(biased_words[ind])
+    if (len(new_features) > 0):
+      featured_words += len(new_features)
+      features = features + new_features
+      count += 1
+    ind += 1
+  # print featured_words
+  return features
 
-def run_decision_tree():
-  df = create_dataframe()
+def run_decision_tree(ind):
+  df = create_dataframe(ind)
   df_train = df[0]
   df_test = df[1]
   
   model = tree.DecisionTreeClassifier()
   model.fit(df_train.drop('ideology', axis=1), df_train['ideology'])
-  print model
+  # print model
   y = df_test['ideology']
   y_predict = model.predict(df_test.drop('ideology', axis=1))
   print accuracy_score(y, y_predict)
@@ -131,4 +178,4 @@ def run_decision_tree():
   # graph = graphviz.Source(dot_data) 
   # graph
 # run_decision_tree()
-pick_subset(["government"])
+run_decision_tree(-1)
