@@ -1,2 +1,3 @@
 # IdeologyDetection
-[embed](./Independent_Study_Write_Up.pdf)[/embed]
+![alt text](http://url/to/img.png)
+[Read the whole pages](./Independent_Study_Write_Up.pdf)
